@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register & Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Sign Up Form -->
+    <div class="container" id="signup" style="display:none;">
+      <h1 class="form-title">Register</h1>
+      <form method="post" id="signupForm">
+        <div class="input-group">
+           <i class="fas fa-user"></i>
+           <input type="text" name="fName" id="signupFName" placeholder="First Name" required>
+           <label for="signupFName">First Name</label>
+        </div>
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" name="lName" id="signupLName" placeholder="Last Name" required>
+            <label for="signupLName">Last Name</label>
+        </div>
+        <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" name="email" id="signupEmail" placeholder="Email" required>
+            <label for="signupEmail">Email</label>
+        </div>
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password" id="signupPassword" placeholder="Password" required>
+            <label for="signupPassword">Password</label>
+        </div>
+        <input type="submit" class="btn" value="Sign Up" name="signUp">
+      </form>
+      <p class="or">----------or--------</p>
+      <div class="icons">
+        <i class="fab fa-google"></i>
+        <i class="fab fa-facebook"></i>
+      </div>
+      <div class="links">
+        <p>Already Have Account ?</p>
+        <button id="signInButton">Sign In</button>
+      </div>
+    </div>
+
+    <!-- Sign In Form -->
+    <div class="container" id="signIn">
+        <h1 class="form-title">Sign In</h1>
+        <form method="post" id="signinForm">
+          <div class="input-group">
+              <i class="fas fa-envelope"></i>
+              <input type="email" name="email" id="signinEmail" placeholder="Email" required>
+              <label for="signinEmail">Email</label>
+          </div>
+          <div class="input-group">
+              <i class="fas fa-lock"></i>
+              <input type="password" name="password" id="signinPassword" placeholder="Password" required>
+              <label for="signinPassword">Password</label>
+          </div>
+          <p class="recover">
+            <a href="#">Recover Password</a>
+          </p>
+         <input type="submit" class="btn" value="Sign In" name="signIn">
+        </form>
+        <p class="or">----------or--------</p>
+        <div class="icons">
+          <i class="fab fa-google"></i>
+          <i class="fab fa-facebook"></i>
+        </div>
+        <div class="links">
+          <p>Don't have account yet?</p>
+          <button id="signUpButton">Sign Up</button>
+        </div>
+    </div>
+
+    <script>
+        // Toggle between sign-up and sign-in forms
+        const signUpButton = document.getElementById('signUpButton');
+        const signInButton = document.getElementById('signInButton');
+        const signUpForm = document.getElementById('signup');
+        const signInForm = document.getElementById('signIn');
+
+        signUpButton.addEventListener('click', function() {
+            signInForm.style.display = "none"; // Hide sign-in form
+            signUpForm.style.display = "block"; // Show sign-up form
+        });
+
+        signInButton.addEventListener('click', function() {
+            signInForm.style.display = "block"; // Show sign-in form
+            signUpForm.style.display = "none"; // Hide sign-up form
+        });
+
+        // Handle sign-up form submission
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = {
+                fName: document.getElementById('signupFName').value,
+                lName: document.getElementById('signupLName').value,
+                email: document.getElementById('signupEmail').value,
+                password: document.getElementById('signupPassword').value
+            };
+
+            try {
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Signup successful! Redirecting to Sign In...');
+                    signInForm.style.display = "block";
+                    signUpForm.style.display = "none";
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Handle sign-in form submission
+        document.getElementById('signinForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                email: document.getElementById('signinEmail').value,
+                password: document.getElementById('signinPassword').value
+            };
+
+            try {
+                const response = await fetch('/api/signin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.message === "Signin successful") {
+                    // Store user's first name
+                    localStorage.setItem('userName', data.user);
+                    // Redirect to the welcome page
+                    window.location.href = `/welcome.html?name=${data.name}`;
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
+

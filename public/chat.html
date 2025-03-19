@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Basic reset and body styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f5;
+        }
+
+        /* Full-screen container */
+        .container {
+            display: flex;
+            height: 100vh; /* Full screen height */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background-color: #2d3748;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .sidebar-header {
+            margin-bottom: 20px;
+        }
+
+        h2, h3 {
+            color: white;
+        }
+
+        .public-chat, .groups-section {
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background-color: #4a5568;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        #groupsList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #groupsList li {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #718096;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Main chat section */
+        .chat-section {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #edf2f7;
+        }
+
+        #chatWindow {
+            height: calc(100vh - 100px); /* Takes full height minus input box */
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+        }
+
+        #chatMessages {
+            max-height: 80%;
+            overflow-y: scroll;
+        }
+
+        #messageInput {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        #messageInput input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #messageInput button {
+            padding: 10px;
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        /* Logout button */
+        #logoutButton {
+            background-color: #e53e3e;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Chat App</h2>
+                <h3 id="welcomeMessage">Welcome, </h3>
+            </div>
+            <div class="public-chat">
+                <h3>Public Chat</h3>
+                <button class="btn" id="joinPublicChat">Join Public Chat</button>
+            </div>
+            <div class="groups-section">
+                <h3>Groups</h3>
+                <ul id="groupsList"></ul>
+                <button class="btn" id="createGroup">Create Group</button>
+            </div>
+            <button id="logoutButton">Logout</button>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <div id="chatWindow">
+                <div id="chatMessages"></div>
+            </div>
+            <div id="messageInput">
+                <input type="text" id="message" placeholder="Enter your message">
+                <button id="sendMessage">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        // Set user's first name from localStorage
+        const userName = localStorage.getItem('userName');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        welcomeMessage.textContent += userName;
+
+        // DOM elements
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('message');
+        const sendMessageBtn = document.getElementById('sendMessage');
+        const joinPublicChatBtn = document.getElementById('joinPublicChat');
+        const groupsList = document.getElementById('groupsList');
+        const createGroupBtn = document.getElementById('createGroup');
+        const logoutButton = document.getElementById('logoutButton');
+
+        let currentRoom = '';
+
+        // Fetch and display all existing groups when the page loads
+        socket.on('allGroups', (groups) => {
+            groups.forEach(group => {
+                const li = document.createElement('li');
+                li.textContent = group.groupName;
+                groupsList.appendChild(li);
+
+                // Join group chat when clicked
+                li.addEventListener('click', () => {
+                    currentRoom = group.groupName;
+                    socket.emit('joinRoom', currentRoom);
+                    chatMessages.innerHTML = ''; // Clear previous chat
+                });
+            });
+        });
+
+        // Join public chat
+        joinPublicChatBtn.addEventListener('click', () => {
+            currentRoom = 'public';
+            socket.emit('joinRoom', 'public');
+            chatMessages.innerHTML = ''; // Clear previous chat
+        });
+
+        // Handle group creation
+        createGroupBtn.addEventListener('click', () => {
+            const groupName = prompt('Enter group name:');
+            if (groupName) {
+                socket.emit('createGroup', groupName);
+            }
+        });
+
+        // Handle logout
+        logoutButton.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = '/'; // Redirect to home page (sign-in)
+        });
+
+        // Listen for chat message events
+        sendMessageBtn.addEventListener('click', () => {
+            const msg = messageInput.value.trim();
+            if (msg && currentRoom) {
+                const messageData = { sender: userName, content: msg, room: currentRoom };
+                socket.emit('chatMessage', messageData);
+                messageInput.value = ''; // Clear input
+            }
+        });
+
+        // Display chat message
+        socket.on('chatMessage', (msg) => {
+            const div = document.createElement('div');
+            div.textContent = `${msg.sender}: ${msg.content}`;
+            chatMessages.appendChild(div);
+        });
+
+        // Display previous messages in the room
+        socket.on('previousMessages', (messages) => {
+            messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.textContent = `${msg.sender}: ${msg.content}`;
+                chatMessages.appendChild(div);
+            });
+        });
+
+        // Handle new group creation event
+        socket.on('newGroupCreated', (data) => {
+            const li = document.createElement('li');
+            li.textContent = data.group.groupName;
+            groupsList.appendChild(li);
+
+            // Join group chat when clicked
+            li.addEventListener('click', () => {
+                currentRoom = data.group.groupName;
+                socket.emit('joinRoom', currentRoom);
+                chatMessages.innerHTML = ''; // Clear previous chat
+            });
+        });
+    </script>
+</body>
+</html>

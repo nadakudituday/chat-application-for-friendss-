@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f0f5;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            font-size: 36px;
+            color: #333;
+        }
+        .chat-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #5a67d8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="welcomeMessage">Welcome</h1>
+    <button class="chat-button" id="chatButton">Go to Chat</button>
+
+    <script>
+        // JavaScript to display the user's first name
+        function getQueryParams(param) {
+            let urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Extract the 'name' parameter from the URL
+        const userName = getQueryParams('name');
+
+        // Update the welcome message if the name exists
+        if (userName) {
+            document.getElementById('welcomeMessage').textContent = `Welcome, ${userName}`;
+            localStorage.setItem('userName', userName); // Store user's name
+        }
+
+        // Set up button to navigate to chat
+        document.getElementById('chatButton').onclick = function() {
+            window.location.href = 'chat.html';
+        };
+    </script>
+</body>
+</html>
